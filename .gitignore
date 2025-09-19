@@ -1,0 +1,316 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+.installed.cfg
+MANIFEST
+.github/
+# Virtual Environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.Python
+pyvenv.cfg
+pip-selfcheck.json
+
+# uv
+uv.lock
+
+# PyCharm / JetBrains
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# VS Code
+.vscode/
+*.code-workspace
+.history/
+
+# Cursor
+.cursorignore
+.cursorindexingignore
+
+# Claude
+.claude/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# pyenv
+.python-version
+
+# pipenv
+Pipfile.lock
+
+# poetry
+poetry.lock
+
+# pdm
+.pdm.toml
+.pdm-python
+.pdm-build/
+
+# PEP 582
+__pypackages__/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
+
+# pytype
+.pytype/
+
+# Cython
+cython_debug/
+
+# pytest
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+htmlcov/
+cover/
+
+# Ruff
+.ruff_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask
+instance/
+.webassets-cache
+
+# Scrapy
+.scrapy
+
+# Sphinx
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# IPython
+profile_default/
+ipython_config.py
+
+# Amazon Ads MCP specific
+# Authentication and tokens
+.cache/
+tokens/
+*.token
+refresh_token.txt
+access_token.txt
+.amazon-ads-cache/
+token_cache.json
+
+# API responses cache
+api_cache/
+response_cache/
+*.cache
+
+# OpenAPI processing
+openapi/.cache/
+openapi/
+
+# Build directories
+.build/
+build/
+*.tar.gz
+*.whl
+
+# Docker
+docker-compose.override.yml
+.dockerignore.local
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Editor backups
+*.swp
+*.swo
+*.swn
+*.bak
+*.backup
+*~
+\#*\#
+.\#*
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Testing
+.tox/
+.nox/
+test_output/
+test_results/
+nosetests.xml
+
+# Documentation builds
+docs/build/
+docs/site/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Secret files
+secrets/
+*.secret
+*.key
+*.pem
+*.crt
+*.p12
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Data directories
+data/
+downloads/
+exports/
+output/
+
+# Debug files
+debug_*.py
+test_*.py
+!tests/test_*.py
+!tests/**/test_*.py
+
+# Amazon Ads specific test files
+test_refresh_token.txt
+test_credentials.json
+sandbox_config.json
+
+# MCP server specific
+mcp_cache/
+.mcp/
+mcp_logs/
+
+# FastMCP
+.fastmcp/
+fastmcp_cache/
+
+# Backup files
+backup/
+*.backup
+*.old
+.debug/
+# Archive files
+archive/
+*.zip
+*.tar
+*.gz
+*.7z
+*.rar
+
+# PyPI configuration
+.pypirc
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Never include .path directories (as requested)
+.path/
+**/.path/
+*.path/
+
+# User-specific files
+personal/
+private/
+local/
+
+# Profiling
+*.prof
+*.lprof
+profile_output/
+
+CLAUDE.md
+AGENTS.md

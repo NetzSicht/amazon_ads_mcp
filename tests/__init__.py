@@ -1,0 +1,1 @@
+"""Test package for Amazon Ads API MCP server."""

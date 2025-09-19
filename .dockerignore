@@ -1,0 +1,81 @@
+# Version control
+.git
+.gitignore
+.github/
+
+# Python artifacts
+.venv
+venv/
+env/
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.pdb
+.pytest_cache
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.*
+*.env
+.env.local
+.env.*.local
+*.key
+*.pem
+*.crt
+*.p12
+credentials.json
+secrets.yaml
+secrets.json
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Development artifacts
+.build
+.claude
+.debug
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Test and documentation
+tests/
+docs/
+*.md
+!README.md
+
+# Project specific
+patch_archive_fastmcp_fixed/
+openapi/
+.chroma_db/
+notebooks/
+examples/credentials/
+examples/.env*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.old
+
+# Debug and profiling
+*.prof
+*.lprof
+core.*
+heapdump.*

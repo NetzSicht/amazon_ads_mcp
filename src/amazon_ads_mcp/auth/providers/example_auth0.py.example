@@ -1,0 +1,216 @@
+"""Example Auth0 authentication provider.
+
+This is an example showing how to implement a custom authentication provider
+for Auth0 or similar OAuth2/OIDC providers.
+
+To use this:
+1. Rename to auth0.py (remove .example extension)
+2. Configure your Auth0 application
+3. Update the configuration as needed
+4. Import it in __init__.py to auto-register
+"""
+
+import logging
+from datetime import datetime, timedelta, timezone
+from typing import Dict, List, Optional
+
+import httpx
+import jwt
+
+from ...models import AuthCredentials, Identity, Token
+from ...utils.http import get_http_client
+from ..base import BaseAmazonAdsProvider, BaseIdentityProvider, ProviderConfig
+from ..registry import register_provider
+
+logger = logging.getLogger(__name__)
+
+
+@register_provider("auth0")
+class Auth0Provider(BaseAmazonAdsProvider, BaseIdentityProvider):
+    """Auth0 authentication provider example.
+    
+    This example shows how to integrate Auth0 for authentication,
+    which could then be mapped to Amazon Ads API credentials.
+    """
+    
+    def __init__(self, config: ProviderConfig):
+        """Initialize Auth0 provider.
+        
+        :param config: Provider configuration
+        :type config: ProviderConfig
+        """
+        self.domain = config.get("domain")  # e.g., "your-tenant.auth0.com"
+        self.client_id = config.get("client_id")
+        self.client_secret = config.get("client_secret")
+        self.audience = config.get("audience", "https://advertising-api.amazon.com")
+        
+        if not all([self.domain, self.client_id, self.client_secret]):
+            raise ValueError(
+                "Auth0 provider requires 'domain', 'client_id', and 'client_secret'"
+            )
+        
+        self._region = config.get("region", "na")
+        self._access_token: Optional[Token] = None
+        self._id_token: Optional[str] = None
+    
+    @property
+    def provider_type(self) -> str:
+        """Return the provider type identifier."""
+        return "auth0"
+    
+    @property
+    def region(self) -> str:
+        """Get the current region."""
+        return self._region
+    
+    async def initialize(self) -> None:
+        """Initialize the provider."""
+        logger.info(f"Initializing Auth0 provider with domain {self.domain}")
+    
+    async def _get_client(self) -> httpx.AsyncClient:
+        """Get shared HTTP client."""
+        return await get_http_client()
+    
+    async def get_token(self) -> Token:
+        """Get current access token from Auth0."""
+        if self._access_token and await self.validate_token(self._access_token):
+            return self._access_token
+        
+        return await self._refresh_access_token()
+    
+    async def _refresh_access_token(self) -> Token:
+        """Get access token via Auth0 client credentials flow."""
+        logger.debug("Getting Auth0 access token")
+        
+        client = await self._get_client()
+        
+        try:
+            response = await client.post(
+                f"https://{self.domain}/oauth/token",
+                json={
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "audience": self.audience,
+                    "grant_type": "client_credentials",
+                },
+                headers={"Content-Type": "application/json"},
+            )
+            
+            if response.status_code != 200:
+                logger.error(f"Auth0 token request failed: {response.text}")
+                response.raise_for_status()
+            
+            data = response.json()
+            access_token = data.get("access_token")
+            expires_in = data.get("expires_in", 86400)  # Default 24 hours
+            
+            if not access_token:
+                raise ValueError("No access token in Auth0 response")
+            
+            # Decode token to get claims
+            try:
+                # Note: In production, verify the signature properly
+                claims = jwt.decode(access_token, options={"verify_signature": False})
+            except:
+                claims = {}
+            
+            expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
+            
+            self._access_token = Token(
+                value=access_token,
+                expires_at=expires_at,
+                token_type="Bearer",
+                metadata={
+                    "issuer": f"https://{self.domain}/",
+                    "subject": claims.get("sub"),
+                    "audience": claims.get("aud"),
+                }
+            )
+            
+            logger.debug(f"Auth0 access token obtained, expires at {expires_at}")
+            return self._access_token
+            
+        except httpx.HTTPError as e:
+            logger.error(f"Failed to get Auth0 token: {e}")
+            raise
+    
+    async def validate_token(self, token: Token) -> bool:
+        """Validate if token is still valid."""
+        buffer = timedelta(minutes=5)
+        return datetime.now(timezone.utc) < (token.expires_at - buffer)
+    
+    async def list_identities(self, **kwargs) -> List[Identity]:
+        """List identities from Auth0.
+        
+        This could query Auth0 Management API for users/organizations
+        that have Amazon Ads access.
+        """
+        # Example: Return synthetic identity for now
+        # In real implementation, query Auth0 Management API
+        identity = Identity(
+            id="auth0-user",
+            type="auth0",
+            attributes={
+                "name": "Auth0 User",
+                "domain": self.domain,
+                "region": self._region,
+                "auth_method": "auth0",
+            }
+        )
+        return [identity]
+    
+    async def get_identity(self, identity_id: str) -> Optional[Identity]:
+        """Get specific identity by ID."""
+        identities = await self.list_identities()
+        for identity in identities:
+            if identity.id == identity_id:
+                return identity
+        return None
+    
+    async def get_identity_credentials(self, identity_id: str) -> AuthCredentials:
+        """Get Amazon Ads credentials for an Auth0 identity.
+        
+        This would typically:
+        1. Use the Auth0 token to call your backend API
+        2. Your backend exchanges this for Amazon Ads credentials
+        3. Return the Amazon Ads credentials
+        
+        For this example, we'll show the structure:
+        """
+        logger.info(f"Getting credentials for Auth0 identity {identity_id}")
+        
+        # Get Auth0 token
+        auth0_token = await self.get_token()
+        
+        # In a real implementation, you would:
+        # 1. Call your backend API with the Auth0 token
+        # 2. Backend validates the token and maps to Amazon Ads creds
+        # 3. Backend returns Amazon Ads access token
+        
+        # For this example, we'll simulate the response
+        # In reality, this would come from your backend
+        amazon_ads_token = "YOUR_AMAZON_ADS_TOKEN_FROM_BACKEND"
+        amazon_ads_client_id = "YOUR_AMAZON_AD_API_CLIENT_ID"  # or legacy AMAZON_ADS_CLIENT_ID
+        
+        return AuthCredentials(
+            identity_id=identity_id,
+            access_token=amazon_ads_token,
+            expires_at=auth0_token.expires_at,
+            base_url=self.get_region_endpoint(),
+            headers={
+                "Authorization": f"Bearer {amazon_ads_token}",
+                "Amazon-Advertising-API-ClientId": amazon_ads_client_id,
+            },
+        )
+    
+    async def get_headers(self) -> Dict[str, str]:
+        """Get authentication headers."""
+        # Would need to implement credential exchange first
+        raise NotImplementedError(
+            "Auth0 provider requires backend integration for credential exchange"
+        )
+    
+    async def close(self) -> None:
+        """Clean up provider resources."""
+        self._access_token = None
+        self._id_token = None
