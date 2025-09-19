@@ -13,7 +13,7 @@ import re
 from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import urlparse
 
-from ..openapi import deref, oai_template_to_regex
+from amazon_ads_mcp.utils.openapi import deref, oai_template_to_regex
 
 
 class MediaTypeRegistry:
