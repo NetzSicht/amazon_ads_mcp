@@ -311,6 +311,3 @@ local/
 *.prof
 *.lprof
 profile_output/
-
-CLAUDE.md
-AGENTS.md
