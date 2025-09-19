@@ -165,7 +165,7 @@ response_cache/
 
 # OpenAPI processing
 openapi/.cache/
-openapi/
+openapi/resources/
 
 # Build directories
 .build/

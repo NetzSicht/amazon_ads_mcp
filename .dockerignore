@@ -60,7 +60,7 @@ docs/
 
 # Project specific
 patch_archive_fastmcp_fixed/
-openapi/
+openapi/resources/
 .chroma_db/
 notebooks/
 examples/credentials/
