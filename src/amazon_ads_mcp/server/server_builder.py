@@ -324,8 +324,15 @@ class ServerBuilder:
         if not raw:
             return set()
 
+        # Strip surrounding quotes if present (Windows compatibility)
+        raw = raw.strip()
+        if (raw.startswith('"') and raw.endswith('"')) or (raw.startswith("'") and raw.endswith("'")):
+            logger.debug("Stripping quotes from AMAZON_AD_API_PACKAGES value")
+            raw = raw[1:-1]
+
         # Parse comma-separated values
         requested = {part.strip().lower() for part in raw.split(",") if part.strip()}
+        logger.debug("Parsed AMAZON_AD_API_PACKAGES: %s", requested)
         if not requested:
             return set()
 
