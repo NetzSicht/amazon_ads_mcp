@@ -1,32 +1,25 @@
 [project]
 name = "amazon-ads-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Amazon Ads API MCP Server - Implementation for Amazon Advertising API"
-authors = [{name = "Amazon Ads API MCP SDK"}]
 readme = "README.md"
-license = {text = "MIT"}
 requires-python = ">=3.10,<4.0"
-dependencies = [
-  "fastmcp>=2.11.3",
-  "python-dotenv>=1.0.0",
-  "pydantic>=2.5.0",
-  "pydantic-settings>=2.0.0",
-  "httpx>=0.27.0",
-  "pyjwt>=2.8.0",
-  "cryptography>=41.0.0",
-  "openai>=1.0.0",
-]
+dependencies = [ "fastmcp>=2.11.3", "python-dotenv>=1.0.0", "pydantic>=2.5.0", "pydantic-settings>=2.0.0", "httpx>=0.27.0", "pyjwt>=2.8.0", "cryptography>=41.0.0", "openai>=1.0.0",]
+[[project.authors]]
+name = "Amazon Ads API MCP SDK"
+
+[build-system]
+requires = [ "poetry-core",]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [ "black>=25.1.0", "isort>=6.0.1", "mypy>=1.18.1", "pytest>=8.4.2", "pytest-asyncio>=1.2.0", "ruff>=0.13.0",]
+
+[project.license]
+text = "MIT"
 
 [project.optional-dependencies]
-dev = [
-  "pytest>=7.4.0",
-  "pytest-asyncio>=0.21.0",
-  "ruff>=0.1.0",
-  "black>=23.0.0",
-  "isort>=5.12.0",
-  "mypy>=1.7.0",
-  "types-pyjwt>=1.7.1",
-]
+dev = [ "pytest>=7.4.0", "pytest-asyncio>=0.21.0", "ruff>=0.1.0", "black>=23.0.0", "isort>=5.12.0", "mypy>=1.7.0", "types-pyjwt>=1.7.1",]
 
 [project.scripts]
 amazon-ads-mcp = "amazon_ads_mcp.server.mcp_server:main"
@@ -35,69 +28,22 @@ amazon-ads-mcp = "amazon_ads_mcp.server.mcp_server:main"
 name = "amazon-ads-mcp"
 version = "0.1.0"
 description = "Amazon Ads API MCP Server - Implementation for Amazon Advertising API"
-authors = ["Amazon Ads API MCP SDK"]
+authors = [ "Amazon Ads API MCP SDK",]
 readme = "README.md"
-packages = [{include = "amazon_ads_mcp", from = "src"}]
-include = [
-  { path = "src/amazon_ads_mcp/resources/*.json", format = "wheel" },
-]
 license = "MIT"
+[[tool.poetry.packages]]
+include = "amazon_ads_mcp"
+from = "src"
 
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-fastmcp = "^2.11.3"
-python-dotenv = "^1.0.0"
-pydantic = "^2.5.0"
-pydantic-settings = "^2.0.0"
-httpx = ">=0.27.0"
-pyjwt = "^2.8.0"
-cryptography = "^41.0.0"
-openai = "^1.0.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
-pytest-asyncio = "^0.21.0"
-black = "^23.0.0"
-isort = "^5.12.0"
-flake8 = "^6.0.0"
-mypy = "^1.7.0"
-types-pyjwt = "^1.7.1"
-types-python-dotenv = "^1.0.0"
-
-[tool.poetry.scripts]
-amazon-ads-mcp = "amazon_ads_mcp.server.mcp_server:main"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-[dependency-groups]
-dev = [
-    "black>=25.1.0",
-    "isort>=6.0.1",
-    "mypy>=1.18.1",
-    "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
-    "ruff>=0.13.0",
-]
+[[tool.poetry.include]]
+path = "src/amazon_ads_mcp/resources/*.json"
+format = "wheel"
 
 [tool.black]
 line-length = 79
-target-version = ['py310']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
+target-version = [ "py310",]
+include = "\\.pyi?$"
+extend-exclude = "/(\n  # directories\n  \\.eggs\n  | \\.git\n  | \\.hg\n  | \\.mypy_cache\n  | \\.tox\n  | \\.venv\n  | build\n  | dist\n)/\n"
 
 [tool.isort]
 profile = "black"
@@ -122,8 +68,6 @@ warn_unused_ignores = true
 warn_no_return = true
 warn_unreachable = true
 strict_equality = true
-
-# Per-module options
 [[tool.mypy.overrides]]
 module = "fastmcp.*"
 ignore_missing_imports = true
@@ -132,27 +76,40 @@ ignore_missing_imports = true
 module = "tests.*"
 ignore_errors = true
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = "-v"
-
 [tool.pytest-asyncio]
 asyncio_mode = "auto"
 
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+fastmcp = "^2.11.3"
+python-dotenv = "^1.0.0"
+pydantic = "^2.5.0"
+pydantic-settings = "^2.0.0"
+httpx = ">=0.27.0"
+pyjwt = "^2.8.0"
+cryptography = "^41.0.0"
+openai = "^1.0.0"
+
+[tool.poetry.scripts]
+amazon-ads-mcp = "amazon_ads_mcp.server.mcp_server:main"
+
+[tool.pytest.ini_options]
+testpaths = [ "tests",]
+addopts = "-v"
+
 [tool.coverage.run]
-source = ["src/amazon_ads_mcp"]
-omit = ["*/tests/*", "*/debug/*"]
+source = [ "src/amazon_ads_mcp",]
+omit = [ "*/tests/*", "*/debug/*",]
 
 [tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "if self.debug:",
-    "if settings.DEBUG",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if 0:",
-    "if __name__ == .__main__.:",
-    "class .*\\bProtocol\\):",
-    "@(abc\\.)?abstractmethod",
-]
+exclude_lines = [ "pragma: no cover", "def __repr__", "if self.debug:", "if settings.DEBUG", "raise AssertionError", "raise NotImplementedError", "if 0:", "if __name__ == .__main__.:", "class .*\\bProtocol\\):", "@(abc\\.)?abstractmethod",]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-asyncio = "^0.21.0"
+black = "^23.0.0"
+isort = "^5.12.0"
+flake8 = "^6.0.0"
+mypy = "^1.7.0"
+types-pyjwt = "^1.7.1"
+types-python-dotenv = "^1.0.0"
