@@ -1,0 +1,256 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version type (patch, minor, major)'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install semantic-version gitpython toml
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Determine version bump
+        id: version
+        run: |
+          python - <<'EOF'
+          import re
+          import subprocess
+          import sys
+
+          # Get the latest commit message
+          commit_msg = subprocess.check_output(['git', 'log', '-1', '--pretty=%B']).decode().strip()
+
+          # Determine version bump type from commit message
+          if re.search(r'\bBREAKING CHANGE\b|^feat!:', commit_msg, re.IGNORECASE):
+              bump_type = 'major'
+          elif commit_msg.startswith('feat:') or commit_msg.startswith('feat('):
+              bump_type = 'minor'
+          elif commit_msg.startswith('fix:') or commit_msg.startswith('fix('):
+              bump_type = 'patch'
+          else:
+              # Check if manual workflow dispatch
+              import os
+              bump_type = os.environ.get('INPUT_VERSION', 'patch')
+
+          print(f"::set-output name=bump_type::{bump_type}")
+          EOF
+
+      - name: Get current version
+        id: current_version
+        run: |
+          python - <<'EOF'
+          import toml
+          import os
+
+          # Read current version from pyproject.toml
+          with open('pyproject.toml', 'r') as f:
+              data = toml.load(f)
+              current = data['project']['version']
+              print(f"::set-output name=version::{current}")
+          EOF
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          python - <<'EOF'
+          import semantic_version
+          import os
+
+          current = semantic_version.Version(os.environ['CURRENT_VERSION'])
+          bump_type = os.environ['BUMP_TYPE']
+
+          if bump_type == 'major':
+              new = current.next_major()
+          elif bump_type == 'minor':
+              new = current.next_minor()
+          else:
+              new = current.next_patch()
+
+          print(f"::set-output name=version::{new}")
+          EOF
+        env:
+          CURRENT_VERSION: ${{ steps.current_version.outputs.version }}
+          BUMP_TYPE: ${{ steps.version.outputs.bump_type }}
+
+      - name: Update version in pyproject.toml
+        run: |
+          python - <<'EOF'
+          import toml
+          import os
+
+          new_version = os.environ['NEW_VERSION']
+
+          # Update pyproject.toml
+          with open('pyproject.toml', 'r') as f:
+              data = toml.load(f)
+
+          data['project']['version'] = new_version
+
+          with open('pyproject.toml', 'w') as f:
+              toml.dump(data, f)
+
+          # Update __init__.py if it exists
+          init_file = 'src/amazon_ads_mcp/__init__.py'
+          if os.path.exists(init_file):
+              with open(init_file, 'r') as f:
+                  content = f.read()
+
+              import re
+              content = re.sub(
+                  r'__version__\s*=\s*["\'].*?["\']',
+                  f'__version__ = "{new_version}"',
+                  content
+              )
+
+              with open(init_file, 'w') as f:
+                  f.write(content)
+          EOF
+        env:
+          NEW_VERSION: ${{ steps.new_version.outputs.version }}
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          python - <<'EOF'
+          import subprocess
+          import re
+          from datetime import datetime
+
+          # Get commits since last tag
+          try:
+              last_tag = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0']).decode().strip()
+              commits = subprocess.check_output(['git', 'log', f'{last_tag}..HEAD', '--pretty=format:%s (%h)']).decode().strip()
+          except:
+              commits = subprocess.check_output(['git', 'log', '--pretty=format:%s (%h)']).decode().strip()
+
+          # Categorize commits
+          features = []
+          fixes = []
+          docs = []
+          others = []
+          breaking = []
+
+          for commit in commits.split('\n'):
+              if not commit:
+                  continue
+              if 'BREAKING CHANGE' in commit or commit.startswith('feat!:'):
+                  breaking.append(commit)
+              elif commit.startswith('feat:') or commit.startswith('feat('):
+                  features.append(commit)
+              elif commit.startswith('fix:') or commit.startswith('fix('):
+                  fixes.append(commit)
+              elif commit.startswith('docs:') or commit.startswith('docs('):
+                  docs.append(commit)
+              else:
+                  others.append(commit)
+
+          # Generate changelog
+          changelog = f"## What's Changed\n\n"
+
+          if breaking:
+              changelog += "### ⚠️ Breaking Changes\n"
+              for item in breaking:
+                  changelog += f"* {item}\n"
+              changelog += "\n"
+
+          if features:
+              changelog += "### ✨ Features\n"
+              for item in features:
+                  changelog += f"* {item}\n"
+              changelog += "\n"
+
+          if fixes:
+              changelog += "### 🐛 Bug Fixes\n"
+              for item in fixes:
+                  changelog += f"* {item}\n"
+              changelog += "\n"
+
+          if docs:
+              changelog += "### 📚 Documentation\n"
+              for item in docs:
+                  changelog += f"* {item}\n"
+              changelog += "\n"
+
+          if others:
+              changelog += "### 🔧 Other Changes\n"
+              for item in others:
+                  changelog += f"* {item}\n"
+              changelog += "\n"
+
+          # Save to file for multi-line output
+          with open('changelog.md', 'w') as f:
+              f.write(changelog)
+
+          print(f"::set-output name=changelog::{changelog[:500]}")  # First 500 chars for summary
+          EOF
+
+      - name: Commit version bump
+        run: |
+          git add pyproject.toml src/amazon_ads_mcp/__init__.py 2>/dev/null || true
+          git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }} [skip ci]" || echo "No changes to commit"
+
+      - name: Push changes
+        run: |
+          git push origin main
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.new_version.outputs.version }}
+          name: Release v${{ steps.new_version.outputs.version }}
+          body_path: changelog.md
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish to PyPI (optional)
+        if: success()
+        continue-on-error: true
+        run: |
+          pip install build twine
+          python -m build
+          python -m twine upload dist/* --skip-existing
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
