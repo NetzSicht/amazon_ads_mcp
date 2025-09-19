@@ -18,7 +18,7 @@ wheels/
 share/python-wheels/
 .installed.cfg
 MANIFEST
-.github/
+
 # Virtual Environments
 .env
 .venv/
