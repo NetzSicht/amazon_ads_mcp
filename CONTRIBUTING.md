@@ -115,7 +115,7 @@ test: add unit tests for profile manager
 ## Security
 
 - **Never commit secrets** - API keys, tokens, passwords
-- **Report vulnerabilities** privately to security@kuudo.ai
+- **Report vulnerabilities** privately to operations@openbridge.com
 - **Validate inputs** - Sanitize user inputs
 - **Follow OAuth best practices** - Secure token storage
 
