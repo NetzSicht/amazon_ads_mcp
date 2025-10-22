@@ -220,6 +220,12 @@ export OPENBRIDGE_ACCOUNT_ID="your-account-id"
 export TRANSPORT="http"  # or "stdio"
 export HOST="0.0.0.0"
 export PORT="9080"
+
+# HTTP Session Management (for n8n and similar tools)
+# Prevents "No Session ID" errors in stateful HTTP clients
+export MCP_SESSION_PERSIST="true"        # Enable session persistence
+export MCP_SESSION_MAX_AGE="3600"        # Session lifetime in seconds (1 hour)
+export MCP_SESSION_COOKIE_NAME="mcp_session_id"  # Session cookie name
 ```
 
 ### MCP-Related Environment Variables
@@ -506,6 +512,56 @@ openapi/resources/*.transform.json  # API transformations
 4. **Import errors**: Run `uv sync` to install dependencies
 5. **Rate limit errors**: Implement exponential backoff
 6. **MCP timeout**: Increase `MCP_TIMEOUT` environment variable
+7. **"No Session ID" errors in n8n/workflow tools**:
+   - Enable session persistence: `MCP_SESSION_PERSIST=true`
+   - Check session logs for tracking information
+   - Verify HTTP transport is being used (not stdio)
+   - Ensure cookies are enabled in the client
+
+### Session Management Troubleshooting
+
+**Problem**: n8n or similar tools show "No Session ID" or "Session expired" errors
+
+**Diagnosis**:
+```bash
+# Check if session middleware is active
+docker-compose logs | grep "session middleware"
+
+# View session creation logs
+docker-compose logs | grep "Created new session"
+
+# Check session cookie in HTTP response
+curl -v http://localhost:9080/some-endpoint
+```
+
+**Solutions**:
+1. Enable session persistence in `.env`:
+   ```bash
+   MCP_SESSION_PERSIST=true
+   MCP_SESSION_MAX_AGE=7200  # 2 hours for longer sessions
+   ```
+
+2. Verify HTTP transport is configured:
+   ```bash
+   TRANSPORT=http  # or streamable-http
+   ```
+
+3. Check session storage permissions:
+   ```bash
+   # For Docker
+   mkdir -p /app/.cache/amazon-ads-mcp
+   chmod 755 /app/.cache/amazon-ads-mcp
+   ```
+
+4. Enable debug logging to trace session lifecycle:
+   ```bash
+   LOG_LEVEL=DEBUG
+   ```
+
+5. View session-aware logs:
+   ```bash
+   docker-compose logs | grep -E "session=|SESSION|AUTH_FLOW"
+   ```
 
 ## Performance Optimization
 

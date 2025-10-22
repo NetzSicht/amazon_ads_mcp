@@ -521,6 +521,21 @@ class RefreshTokenMiddleware(Middleware):
             >>> # This method is called automatically by FastMCP
             >>> # when requests are processed through the middleware chain
         """
+        # Log session context for debugging
+        try:
+            from ..middleware.session import get_current_session_id
+            from ..utils.session_logging import log_auth_flow
+
+            session_id = get_current_session_id()
+            if session_id:
+                log_auth_flow(
+                    self.logger,
+                    stage="refresh_token_check",
+                    session_id=session_id[:8],
+                )
+        except Exception:
+            pass  # Session logging is optional
+
         if not self.config.enabled or not self.config.refresh_token_enabled:
             return await call_next(context)
 
@@ -724,6 +739,21 @@ class JWTAuthenticationMiddleware(Middleware):
             >>> # This method is called automatically by FastMCP
             >>> # when requests are processed through the middleware chain
         """
+        # Log session context for debugging
+        try:
+            from ..middleware.session import get_current_session_id
+            from ..utils.session_logging import log_auth_flow
+
+            session_id = get_current_session_id()
+            if session_id:
+                log_auth_flow(
+                    self.logger,
+                    stage="jwt_validation",
+                    session_id=session_id[:8],
+                )
+        except Exception:
+            pass  # Session logging is optional
+
         if not self.config.enabled or not self.config.jwt_validation_enabled:
             self.logger.debug("Authentication disabled, skipping validation")
             return await call_next(context)
