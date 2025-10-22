@@ -1,3 +1,9 @@
+git fetch upstream
+git merge upstream/main
+git push origin main
+
+UM Kuddoo abzudaten
+
 <div align="center">
 
 # Amazon Ads API MCP SDK
