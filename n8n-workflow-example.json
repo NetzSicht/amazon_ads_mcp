@@ -12,7 +12,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://srv901462.hstgr.cloud:9080",
+        "url": "http://YOUR_SERVER_HOST:9080",
         "authentication": "none",
         "sendBody": true,
         "bodyParameters": {
@@ -49,7 +49,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://srv901462.hstgr.cloud:9080",
+        "url": "http://YOUR_SERVER_HOST:9080",
         "authentication": "none",
         "sendBody": true,
         "contentType": "json",

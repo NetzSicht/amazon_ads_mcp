@@ -31,13 +31,7 @@ services:
       - downloads:/app/data
       # Persist token cache across container restarts
       - cache:/app/.cache
-    command: [
-      "python", "-m", "amazon_ads_mcp.server",
-      "--transport", "${TRANSPORT:-http}",
-      "--host", "${HOST:-0.0.0.0}",
-      "--port", "${PORT:-9080}"
-    ]
- 
+
 volumes:
   downloads: {}
   cache: {}

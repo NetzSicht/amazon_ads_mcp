@@ -6,13 +6,15 @@ This guide shows you how to integrate the Amazon Ads MCP Server with n8n workflo
 
 **MCP Server URL:**
 ```
-http://srv901462.hstgr.cloud:9080
+http://YOUR_SERVER_HOST:9080
 ```
 
 **Alternative (if HTTPS is enforced):**
 ```
-https://srv901462.hstgr.cloud:9080
+https://YOUR_SERVER_HOST:9080
 ```
+
+Replace `YOUR_SERVER_HOST` with your actual server hostname or IP address.
 
 ---
 
@@ -22,10 +24,10 @@ Before using in n8n, verify the server is accessible:
 
 ```bash
 # Test from your terminal
-curl http://srv901462.hstgr.cloud:9080
+curl http://YOUR_SERVER_HOST:9080
 
 # Or test MCP protocol
-curl -X POST http://srv901462.hstgr.cloud:9080 \
+curl -X POST http://YOUR_SERVER_HOST:9080 \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -44,7 +46,7 @@ curl -X POST http://srv901462.hstgr.cloud:9080 \
 
 ```
 Method:           POST
-URL:              http://srv901462.hstgr.cloud:9080
+URL:              http://YOUR_SERVER_HOST:9080
 Content-Type:     application/json
 Body:             MCP JSON-RPC request (see examples below)
 ```
@@ -86,7 +88,7 @@ All requests use JSON-RPC 2.0 format:
 
 **HTTP Request Node:**
 ```json
-POST http://srv901462.hstgr.cloud:9080
+POST http://YOUR_SERVER_HOST:9080
 
 Body:
 {
@@ -140,7 +142,7 @@ Body:
 
 **HTTP Request Node:**
 ```json
-POST http://srv901462.hstgr.cloud:9080
+POST http://YOUR_SERVER_HOST:9080
 
 Body:
 {
@@ -202,7 +204,7 @@ return [];
 
 **HTTP Request Node:**
 ```json
-POST http://srv901462.hstgr.cloud:9080
+POST http://YOUR_SERVER_HOST:9080
 
 Body:
 {
@@ -226,7 +228,7 @@ Body:
 
 **HTTP Request Node:**
 ```json
-POST http://srv901462.hstgr.cloud:9080
+POST http://YOUR_SERVER_HOST:9080
 
 Body:
 {
@@ -383,8 +385,8 @@ MCP_SESSION_COOKIE_NAME=mcp_session_id
 **Problem:** Can't reach the server
 
 **Solutions:**
-1. Check if container is running at Hostinger
-2. Verify the URL: `http://srv901462.hstgr.cloud:9080`
+1. Check if container is running on your server
+2. Verify the URL: `http://YOUR_SERVER_HOST:9080`
 3. Check firewall/port settings
 
 ---
@@ -543,7 +545,7 @@ If you encounter issues:
 
 3. Test MCP directly:
    ```bash
-   curl -X POST http://srv901462.hstgr.cloud:9080 \
+   curl -X POST http://YOUR_SERVER_HOST:9080 \
      -H "Content-Type: application/json" \
      -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
    ```
