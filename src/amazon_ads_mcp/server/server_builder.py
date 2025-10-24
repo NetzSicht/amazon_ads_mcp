@@ -130,14 +130,17 @@ class ServerBuilder:
 
         # Add session middleware first (for HTTP transport)
         # This ensures session IDs are available for all subsequent middleware
+        # NOTE: Disabled by default as it conflicts with FastMCP's built-in session management
+        # Enable with MCP_CUSTOM_SESSION_MIDDLEWARE=true if needed
         transport = os.getenv("TRANSPORT", "stdio")
-        if transport in ("http", "streamable-http"):
+        enable_custom_session = os.getenv("MCP_CUSTOM_SESSION_MIDDLEWARE", "false").lower() == "true"
+        if transport in ("http", "streamable-http") and enable_custom_session:
             try:
                 from ..middleware.session import create_session_middleware
 
                 session_middleware = create_session_middleware()
                 middleware_list.append(session_middleware)
-                logger.info("Added HTTP session middleware for state management")
+                logger.info("Added custom HTTP session middleware for state management")
             except Exception as e:
                 logger.warning(f"Could not add session middleware: {e}")
 
