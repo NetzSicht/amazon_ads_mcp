@@ -32,6 +32,18 @@ services:
       # Persist token cache across container restarts
       - cache:/app/.cache
 
+    # Explicitly set command to use http transport (not streamable-http)
+    command:
+      - "python"
+      - "-m"
+      - "amazon_ads_mcp.server.mcp_server"
+      - "--transport"
+      - "http"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "9080"
+
 volumes:
   downloads: {}
   cache: {}
