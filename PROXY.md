@@ -28,12 +28,15 @@ The HTTP Proxy provides a stateless gateway between n8n/external clients and the
 # Install docker-compose if needed
 apt install docker-compose
 
-# Start both proxy and MCP server
+# Pull latest images and start both proxy and MCP server
+docker-compose pull
 docker-compose up -d
 
 # Check logs
 docker-compose logs -f amazon-ads-mcp-proxy
 ```
+
+**Note:** The proxy image is automatically built and published to GitHub Container Registry. You don't need to build it locally!
 
 ### 2. Test the Proxy
 

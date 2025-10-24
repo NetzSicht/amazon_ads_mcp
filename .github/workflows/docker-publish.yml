@@ -26,6 +26,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  PROXY_IMAGE_NAME: ${{ github.repository }}-proxy
 
 jobs:
   build-and-push:
@@ -68,7 +69,8 @@ jobs:
             org.opencontainers.image.description=Model Context Protocol server for Amazon Advertising API
             org.opencontainers.image.vendor=NetzSicht
 
-      - name: Build and push Docker image
+      - name: Build and push MCP Server image
+        id: build-server
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -80,10 +82,50 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
-      - name: Generate artifact attestation
+      - name: Extract metadata for Proxy image
+        id: meta-proxy
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.PROXY_IMAGE_NAME }}
+          tags: |
+            # Tag as 'latest' on push to main
+            type=raw,value=latest,enable={{is_default_branch}}
+            # Tag with semantic version on release
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            # Tag with git SHA for traceability
+            type=sha,prefix={{branch}}-
+          labels: |
+            org.opencontainers.image.title=Amazon Ads MCP Proxy
+            org.opencontainers.image.description=Stateless HTTP proxy for Amazon Ads MCP Server
+            org.opencontainers.image.vendor=NetzSicht
+
+      - name: Build and push Proxy image
+        id: build-proxy
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.proxy
+          push: true
+          tags: ${{ steps.meta-proxy.outputs.tags }}
+          labels: ${{ steps.meta-proxy.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Generate artifact attestation for MCP Server
         if: github.event_name == 'release'
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
+          subject-digest: ${{ steps.build-server.outputs.digest }}
+          push-to-registry: true
+
+      - name: Generate artifact attestation for Proxy
+        if: github.event_name == 'release'
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.PROXY_IMAGE_NAME }}
+          subject-digest: ${{ steps.build-proxy.outputs.digest }}
           push-to-registry: true
