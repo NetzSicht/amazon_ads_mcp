@@ -1,0 +1,127 @@
+{
+  "name": "Amazon Ads MCP - Get Profiles",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "start",
+      "name": "When clicking \"Test workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://YOUR_SERVER_HOST:9080",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "jsonrpc",
+              "value": "2.0"
+            },
+            {
+              "name": "method",
+              "value": "tools/list"
+            },
+            {
+              "name": "id",
+              "value": "1"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "list-tools",
+      "name": "List Available Tools",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [470, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://YOUR_SERVER_HOST:9080",
+        "authentication": "none",
+        "sendBody": true,
+        "contentType": "json",
+        "body": "={\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"tools/call\",\n  \"params\": {\n    \"name\": \"list_profiles\",\n    \"arguments\": {}\n  },\n  \"id\": 2\n}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": false,
+              "neverError": true
+            }
+          }
+        }
+      },
+      "id": "list-profiles",
+      "name": "List Amazon Ads Profiles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [690, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse MCP response\nconst mcpResponse = $input.all()[0].json;\n\nif (mcpResponse.result && mcpResponse.result.content) {\n  const content = mcpResponse.result.content[0];\n  \n  if (content.type === 'text') {\n    // Parse the JSON text content\n    const profiles = JSON.parse(content.text);\n    \n    // Return as array for further processing\n    return profiles.map(profile => ({\n      json: profile\n    }));\n  }\n}\n\nreturn [];"
+      },
+      "id": "parse-response",
+      "name": "Parse MCP Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [910, 300]
+    }
+  ],
+  "connections": {
+    "When clicking \"Test workflow\"": {
+      "main": [
+        [
+          {
+            "node": "List Available Tools",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Available Tools": {
+      "main": [
+        [
+          {
+            "node": "List Amazon Ads Profiles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Amazon Ads Profiles": {
+      "main": [
+        [
+          {
+            "node": "Parse MCP Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2025-10-24T13:00:00.000Z",
+  "versionId": "1"
+}
