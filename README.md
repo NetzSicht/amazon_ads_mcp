@@ -96,33 +96,52 @@ Here is a representative list of the various Amazon API services in the MCP:
 
 ## Installation
 
-We recommend installing Amazon Ads API MCP with 🐳 [Docker](https://docs.astral.sh/uv/):
+### 🐳 Docker (Recommended)
+
+We provide pre-built Docker images that are automatically updated with each release:
 
 ```bash
-docker pull openbridge/amazon-ads-mcp
+# Pull the latest image from GitHub Container Registry
+docker pull ghcr.io/netzsicht/amazon_ads_mcp:latest
 ```
 
- Copy the environment template
- ```bash
+**Available Tags:**
+- `latest` - Latest stable release (recommended)
+- `v0.1.11` - Specific version
+- `v0.1` - Latest patch of minor version
+- `v0` - Latest minor of major version
+
+**Quick Start:**
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/NetzSicht/amazon_ads_mcp.git
+cd amazon_ads_mcp
+
+# 2. Copy the environment template
 cp .env.example .env
-```
+# Edit .env with your Amazon Ads credentials
 
-Edit .env with your settings
-
-Start the server with Docker Compose
-```bash
+# 3. Start the server with Docker Compose
 docker-compose up -d
-```
-The server will be available at http://localhost:9080
 
-Check logs
+# 4. The server will be available at http://localhost:9080
+```
+
+**Manage the server:**
+
 ```bash
+# Check logs
 docker-compose logs -f
-```
-Stop the server
-```bash
+
+# Stop the server
 docker-compose down
+
+# Update to latest version
+docker-compose pull && docker-compose up -d
 ```
+
+📖 For detailed Docker usage, image tags, and troubleshooting, see the [**Docker Guide**](DOCKER.md).
 
 For full installation instructions, including verification, upgrading, and developer setup, see the [**Installation Guide**](INSTALL.md).
 

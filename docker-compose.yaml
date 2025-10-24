@@ -1,9 +1,14 @@
 services:
   amazon-ads-mcp:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: amazon-ads-mcp:latest
+    # Use pre-built image from GitHub Container Registry (recommended)
+    # This automatically pulls the latest stable version
+    image: ghcr.io/netzsicht/amazon_ads_mcp:latest
+
+    # Alternative: Build locally (uncomment to use local build)
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+
     container_name: amazon-ads-mcp
     env_file:
       - .env
