@@ -14,7 +14,7 @@ forwards requests/responses transparently.
 import asyncio
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import httpx
 from fastapi import FastAPI, Request, Response, status
@@ -188,9 +188,50 @@ async def proxy_request(request: Request) -> Response:
                 mcp_session_id = new_session_id
                 logger.info(f"Session ID updated: {mcp_session_id[:8]}...")
 
+        # Parse response - handle JSON, SSE, and empty responses
+        try:
+            response_text = response.text
+
+            # Check if response is Server-Sent Events format
+            if response_text.startswith("event:"):
+                # Parse SSE format: "event: message\ndata: {...}\n"
+                import json
+                for line in response_text.split("\n"):
+                    if line.startswith("data: "):
+                        json_str = line[6:]  # Remove "data: " prefix
+                        response_content = json.loads(json_str)
+                        break
+                else:
+                    # No data line found
+                    response_content = {
+                        "jsonrpc": "2.0",
+                        "id": "proxy-error",
+                        "error": {
+                            "code": -32603,
+                            "message": "Invalid SSE response: no data field",
+                        },
+                    }
+            elif response.content:
+                # Standard JSON response
+                response_content = response.json()
+            else:
+                # Empty response
+                response_content = {}
+        except Exception as e:
+            logger.error(f"Failed to parse response: {e}")
+            logger.error(f"Response body: {response.text[:500]}")
+            response_content = {
+                "jsonrpc": "2.0",
+                "id": "proxy-error",
+                "error": {
+                    "code": -32603,
+                    "message": f"Invalid response from MCP server: {str(e)}",
+                },
+            }
+
         # Return response to client
         return JSONResponse(
-            content=response.json(),
+            content=response_content,
             status_code=response.status_code,
             headers={"Content-Type": "application/json"},
         )
