@@ -28,6 +28,15 @@ PROXY_HOST = os.getenv("PROXY_HOST", "0.0.0.0")
 PROXY_PORT = int(os.getenv("PROXY_PORT", "8080"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
+# Security: API Key for authentication
+# CRITICAL: Set this environment variable to a strong random string
+PROXY_API_KEY = os.getenv("PROXY_API_KEY")
+if not PROXY_API_KEY:
+    logger.warning("⚠️  PROXY_API_KEY not set - proxy is UNSECURED and accessible to anyone!")
+    logger.warning("⚠️  Set PROXY_API_KEY environment variable to secure the proxy")
+else:
+    logger.info("✓ API Key authentication enabled")
+
 # Setup logging
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper()),
@@ -45,6 +54,40 @@ app = FastAPI(
 mcp_client: Optional[httpx.AsyncClient] = None
 mcp_session_id: Optional[str] = None
 session_lock = asyncio.Lock()
+
+
+def verify_api_key(request: Request) -> bool:
+    """Verify API key from Authorization header.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        True if API key is valid or not required, False otherwise
+    """
+    # If no API key is configured, allow all requests (with warning logged at startup)
+    if not PROXY_API_KEY:
+        return True
+
+    # Check Authorization header
+    auth_header = request.headers.get("Authorization", "")
+
+    # Support both "Bearer <key>" and direct key
+    if auth_header.startswith("Bearer "):
+        provided_key = auth_header[7:]  # Remove "Bearer " prefix
+    else:
+        provided_key = auth_header
+
+    # Also check X-API-Key header as alternative
+    if not provided_key:
+        provided_key = request.headers.get("X-API-Key", "")
+
+    is_valid = provided_key == PROXY_API_KEY
+
+    if not is_valid:
+        logger.warning(f"Unauthorized access attempt from {request.client.host}")
+
+    return is_valid
 
 
 async def ensure_session():
@@ -144,12 +187,29 @@ async def proxy_request(request: Request) -> Response:
     This endpoint accepts standard JSON-RPC 2.0 requests and forwards them
     to the MCP server, handling session management transparently.
 
+    Requires API key authentication via Authorization header when PROXY_API_KEY is set.
+
     Args:
         request: FastAPI request object with JSON-RPC payload
 
     Returns:
         Response from MCP server with appropriate status code
     """
+    # Verify API key
+    if not verify_api_key(request):
+        return JSONResponse(
+            content={
+                "jsonrpc": "2.0",
+                "id": "auth-error",
+                "error": {
+                    "code": -32600,
+                    "message": "Unauthorized: Invalid or missing API key",
+                },
+            },
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            headers={"WWW-Authenticate": 'Bearer realm="Amazon Ads MCP Proxy"'},
+        )
+
     global mcp_session_id
 
     try:
