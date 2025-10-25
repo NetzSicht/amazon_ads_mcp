@@ -23,15 +23,15 @@
 ```bash
 # Auf deinem lokalen Mac
 cd ~/amazon_ads_mcp  # oder wo auch immer dein Projekt liegt
-scp docker-compose-production.yaml root@srv901462.hstgr.cloud:/opt/amazon-ads-mcp/docker-compose.yaml
-scp .env.production.example root@srv901462.hstgr.cloud:/opt/amazon-ads-mcp/.env.example
+scp docker-compose-production.yaml root@YOUR_SERVER:/opt/amazon-ads-mcp/docker-compose.yaml
+scp .env.production.example root@YOUR_SERVER:/opt/amazon-ads-mcp/.env.example
 ```
 
 ### Schritt 2: Auf dem Server einrichten
 
 ```bash
 # Auf dem Hostinger Server
-ssh root@srv901462.hstgr.cloud
+ssh root@YOUR_SERVER
 
 # Verzeichnis erstellen falls nicht vorhanden
 mkdir -p /opt/amazon-ads-mcp
@@ -117,7 +117,7 @@ JSON mit Tool-Liste, **KEIN** "Missing session ID" Fehler!
 
 **HTTP Request Node:**
 - **Method:** POST
-- **URL:** `http://46.202.154.135:8080`
+- **URL:** `http://YOUR_SERVER_IP:8080`
 - **Headers:**
   - `Content-Type`: `application/json`
 - **Body (JSON):**
