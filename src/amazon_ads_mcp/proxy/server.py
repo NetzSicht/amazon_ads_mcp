@@ -150,6 +150,8 @@ async def proxy_request(request: Request) -> Response:
     Returns:
         Response from MCP server with appropriate status code
     """
+    global mcp_session_id
+
     try:
         # Ensure we have a session
         await ensure_session()
@@ -185,7 +187,6 @@ async def proxy_request(request: Request) -> Response:
         if "mcp-session-id" in response.headers:
             new_session_id = response.headers["mcp-session-id"]
             if new_session_id != mcp_session_id:
-                global mcp_session_id
                 mcp_session_id = new_session_id
                 logger.info(f"Session ID updated: {mcp_session_id[:8]}...")
 
