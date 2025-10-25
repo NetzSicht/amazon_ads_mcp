@@ -11,9 +11,10 @@ The proxy maintains a persistent session with the MCP server and
 forwards requests/responses transparently.
 """
 
+import asyncio
 import logging
 import os
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import httpx
 from fastapi import FastAPI, Request, Response, status
@@ -40,8 +41,49 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Persistent HTTP client with cookie jar for MCP server session
-mcp_client: httpx.AsyncClient | None = None
+# Persistent HTTP client and session state
+mcp_client: Optional[httpx.AsyncClient] = None
+mcp_session_id: Optional[str] = None
+session_lock = asyncio.Lock()
+
+
+async def ensure_session():
+    """Ensure we have an active MCP session.
+
+    If no session exists, makes an initial request to establish one.
+    Stores the session ID for subsequent requests.
+    """
+    global mcp_session_id
+
+    if mcp_session_id:
+        return
+
+    async with session_lock:
+        # Double-check after acquiring lock
+        if mcp_session_id:
+            return
+
+        try:
+            # Make initial request to establish session
+            logger.info("Establishing session with MCP server...")
+            response = await mcp_client.post(
+                MCP_SERVER_URL,
+                json={"jsonrpc": "2.0", "method": "tools/list", "id": "init"},
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/event-stream",
+                },
+            )
+
+            # Extract session ID from response header
+            if "mcp-session-id" in response.headers:
+                mcp_session_id = response.headers["mcp-session-id"]
+                logger.info(f"Session established: {mcp_session_id[:8]}...")
+            else:
+                logger.warning("No session ID in response - MCP server may not require sessions")
+
+        except Exception as e:
+            logger.error(f"Failed to establish session: {e}")
 
 
 @app.on_event("startup")
@@ -51,10 +93,12 @@ async def startup_event():
     mcp_client = httpx.AsyncClient(
         timeout=httpx.Timeout(30.0),
         follow_redirects=True,
-        # Cookie jar is enabled by default in httpx.AsyncClient
     )
     logger.info(f"Proxy started - forwarding to {MCP_SERVER_URL}")
     logger.info(f"Listening on {PROXY_HOST}:{PROXY_PORT}")
+
+    # Establish initial session
+    await ensure_session()
 
 
 @app.on_event("shutdown")
@@ -107,6 +151,9 @@ async def proxy_request(request: Request) -> Response:
         Response from MCP server with appropriate status code
     """
     try:
+        # Ensure we have a session
+        await ensure_session()
+
         # Get request body
         body = await request.json()
         logger.debug(f"Received request: {body.get('method', 'unknown')}")
@@ -117,16 +164,30 @@ async def proxy_request(request: Request) -> Response:
             "Accept": "application/json, text/event-stream",
         }
 
-        # Make request to MCP server (cookies are handled automatically by httpx client)
+        # Prepare cookies with session ID
+        cookies = {}
+        if mcp_session_id:
+            cookies["mcp_session_id"] = mcp_session_id
+
+        # Make request to MCP server with session cookie
         response = await mcp_client.post(
             MCP_SERVER_URL,
             json=body,
             headers=headers,
+            cookies=cookies,
         )
 
         logger.debug(
             f"MCP server response: {response.status_code} for {body.get('method', 'unknown')}"
         )
+
+        # Update session ID if it changed
+        if "mcp-session-id" in response.headers:
+            new_session_id = response.headers["mcp-session-id"]
+            if new_session_id != mcp_session_id:
+                global mcp_session_id
+                mcp_session_id = new_session_id
+                logger.info(f"Session ID updated: {mcp_session_id[:8]}...")
 
         # Return response to client
         return JSONResponse(
