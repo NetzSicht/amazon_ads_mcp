@@ -166,17 +166,15 @@ async def proxy_request(request: Request) -> Response:
             "Accept": "application/json, text/event-stream",
         }
 
-        # Prepare cookies with session ID
-        cookies = {}
+        # Add session ID as header if we have one
         if mcp_session_id:
-            cookies["mcp_session_id"] = mcp_session_id
+            headers["Cookie"] = f"mcp_session_id={mcp_session_id}"
 
-        # Make request to MCP server with session cookie
+        # Make request to MCP server with session in header
         response = await mcp_client.post(
             MCP_SERVER_URL,
             json=body,
             headers=headers,
-            cookies=cookies,
         )
 
         logger.debug(
