@@ -94,13 +94,7 @@ class ServerBuilder:
         :rtype: FastMCP
         """
         # Create server with appropriate configuration
-        # Use stateless_http=True to disable FastMCP's session management
-        # This allows our proxy to handle sessions transparently for n8n
-        server = FastMCP(
-            "Amazon Ads MCP Server",
-            version="1.0.0",
-            stateless_http=True,
-        )
+        server = FastMCP("Amazon Ads MCP Server", version="1.0.0")
 
         # Setup server-side sampling handler if enabled
         if settings.enable_sampling:

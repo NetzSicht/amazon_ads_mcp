@@ -212,12 +212,13 @@ def main() -> None:
                 "streamable-http" if args.transport == "streamable-http" else "http"
             )
             logger.info("Starting %s server on %s:%d", transport, args.host, args.port)
-            # Use streamable-http transport which handles SSE properly
+            # Use stateless_http=True to disable FastMCP's session management
+            # This allows our proxy to handle sessions transparently for n8n
             mcp.run(
                 transport=transport,
                 host=args.host,
                 port=args.port,
-                # Using default path to avoid redirect issues
+                stateless_http=True,
             )
         else:
             logger.info("Running in stdio mode")
