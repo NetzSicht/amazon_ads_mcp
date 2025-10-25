@@ -37,6 +37,19 @@ if not PROXY_API_KEY:
 else:
     logger.info("✓ API Key authentication enabled")
 
+# Security: IP Whitelisting
+# Optional: Comma-separated list of allowed IPs (e.g., "1.2.3.4,5.6.7.8")
+ALLOWED_IPS_STR = os.getenv("ALLOWED_IPS", "")
+ALLOWED_IPS = [ip.strip() for ip in ALLOWED_IPS_STR.split(",") if ip.strip()]
+
+# Always allow localhost for health checks
+ALLOWED_IPS.extend(["127.0.0.1", "::1", "localhost"])
+
+if ALLOWED_IPS_STR:
+    logger.info(f"✓ IP Whitelist enabled: {len([ip for ip in ALLOWED_IPS if ip not in ['127.0.0.1', '::1', 'localhost']])} IP(s)")
+else:
+    logger.warning("⚠️  ALLOWED_IPS not set - accepting requests from any IP")
+
 # Setup logging
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL.upper()),
@@ -88,6 +101,30 @@ def verify_api_key(request: Request) -> bool:
         logger.warning(f"Unauthorized access attempt from {request.client.host}")
 
     return is_valid
+
+
+def verify_ip_whitelist(request: Request) -> bool:
+    """Verify client IP is in the whitelist.
+
+    Args:
+        request: FastAPI request object
+
+    Returns:
+        True if IP is allowed or whitelist is disabled, False otherwise
+    """
+    # If no whitelist configured, allow all IPs
+    if not ALLOWED_IPS_STR:
+        return True
+
+    client_ip = request.client.host
+
+    # Check if client IP is in allowed list
+    is_allowed = client_ip in ALLOWED_IPS
+
+    if not is_allowed:
+        logger.warning(f"Blocked request from non-whitelisted IP: {client_ip}")
+
+    return is_allowed
 
 
 async def ensure_session():
@@ -187,7 +224,9 @@ async def proxy_request(request: Request) -> Response:
     This endpoint accepts standard JSON-RPC 2.0 requests and forwards them
     to the MCP server, handling session management transparently.
 
-    Requires API key authentication via Authorization header when PROXY_API_KEY is set.
+    Security:
+    - IP Whitelist: Only allowed IPs can access (when ALLOWED_IPS is set)
+    - API Key: Requires valid API key in Authorization header (when PROXY_API_KEY is set)
 
     Args:
         request: FastAPI request object with JSON-RPC payload
@@ -195,7 +234,21 @@ async def proxy_request(request: Request) -> Response:
     Returns:
         Response from MCP server with appropriate status code
     """
-    # Verify API key
+    # First, verify IP whitelist
+    if not verify_ip_whitelist(request):
+        return JSONResponse(
+            content={
+                "jsonrpc": "2.0",
+                "id": "ip-blocked",
+                "error": {
+                    "code": -32600,
+                    "message": "Forbidden: IP address not allowed",
+                },
+            },
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Then verify API key
     if not verify_api_key(request):
         return JSONResponse(
             content={
