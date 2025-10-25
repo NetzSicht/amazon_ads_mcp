@@ -14,7 +14,7 @@ forwards requests/responses transparently.
 import asyncio
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Optional
 
 import httpx
 from fastapi import FastAPI, Request, Response, status
@@ -188,9 +188,24 @@ async def proxy_request(request: Request) -> Response:
                 mcp_session_id = new_session_id
                 logger.info(f"Session ID updated: {mcp_session_id[:8]}...")
 
+        # Parse response - handle both JSON and empty responses
+        try:
+            response_content = response.json() if response.content else {}
+        except Exception as e:
+            logger.error(f"Failed to parse response as JSON: {e}")
+            logger.error(f"Response body: {response.text}")
+            response_content = {
+                "jsonrpc": "2.0",
+                "id": "proxy-error",
+                "error": {
+                    "code": -32603,
+                    "message": f"Invalid response from MCP server: {response.text[:200]}",
+                },
+            }
+
         # Return response to client
         return JSONResponse(
-            content=response.json(),
+            content=response_content,
             status_code=response.status_code,
             headers={"Content-Type": "application/json"},
         )
