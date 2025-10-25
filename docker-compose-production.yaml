@@ -1,0 +1,46 @@
+services:
+  # HTTP Proxy - Stateless gateway for n8n (Port 8080)
+  amazon-ads-mcp-proxy:
+    image: ghcr.io/netzsicht/amazon_ads_mcp-proxy:latest
+    container_name: amazon-ads-mcp-proxy
+    environment:
+      - MCP_SERVER_URL=http://amazon-ads-mcp-netzsicht:9080/mcp
+      - PROXY_HOST=0.0.0.0
+      - PROXY_PORT=8080
+      - LOG_LEVEL=INFO
+    ports:
+      - "8080:8080"
+    depends_on:
+      - amazon-ads-mcp
+    restart: unless-stopped
+
+  # MCP Server - Internal only, accessed via proxy
+  amazon-ads-mcp:
+    image: ghcr.io/netzsicht/amazon_ads_mcp:latest
+    container_name: amazon-ads-mcp-netzsicht
+    environment:
+      - LOG_LEVEL=INFO
+      - AMAZON_AD_API_CLIENT_ID=${AMAZON_AD_API_CLIENT_ID}
+      - AMAZON_AD_API_CLIENT_SECRET=${AMAZON_AD_API_CLIENT_SECRET}
+      - AMAZON_AD_API_REFRESH_TOKEN=${AMAZON_AD_API_REFRESH_TOKEN}
+      - AMAZON_AD_API_PACKAGES=profiles,reporting-version-3
+    expose:
+      - "9080"
+    volumes:
+      - downloads:/app/data
+      - cache:/app/.cache
+    command:
+      - "python"
+      - "-m"
+      - "amazon_ads_mcp.server.mcp_server"
+      - "--transport"
+      - "http"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "9080"
+    restart: unless-stopped
+
+volumes:
+  downloads: {}
+  cache: {}
